@@ -1,47 +1,31 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Go Analog Agent</title>
-    <style>
-      body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
-      textarea { width: 100%; height: 180px; margin-bottom: 12px; }
-      button { padding: 10px 16px; cursor: pointer; }
-      pre { background: #f4f4f4; padding: 12px; white-space: pre-wrap; }
-    </style>
-  </head>
-  <body>
-    <h1>Go Analog Agent</h1>
-    <p>Type a prompt and test your live AI endpoint.</p>
+<script>
+  document.getElementById("send").addEventListener("click", async () => {
+    const prompt = document.getElementById("prompt").value;
+    const output = document.getElementById("output");
 
-    <textarea id="prompt">Write a calm, helpful reply to a parent whose child is addicted to their phone.</textarea>
-    <br />
-    <button id="send">Generate Reply</button>
+    output.textContent = "Generating...";
 
-    <h2>Response</h2>
-    <pre id="output">Waiting...</pre>
-
-    <script>
-      document.getElementById("send").addEventListener("click", async () => {
-        const prompt = document.getElementById("prompt").value;
-        const output = document.getElementById("output");
-        output.textContent = "Loading...";
-
-        try {
-          const res = await fetch("/generate-reply", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ prompt }),
-          });
-
-          const data = await res.json();
-          output.textContent = JSON.stringify(data, null, 2);
-        } catch (err) {
-          output.textContent = "Error: " + String(err);
-        }
+    try {
+      const res = await fetch("/generate-reply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
       });
-    </script>
-  </body>
-</html>
+
+      const data = await res.json();
+
+      // Extract clean reply
+      const reply =
+        data?.reply ||
+        data?.data?.choices?.[0]?.message?.content ||
+        "No reply generated";
+
+      output.textContent = reply;
+
+    } catch (err) {
+      output.textContent = "Error: " + String(err);
+    }
+  });
+</script>
