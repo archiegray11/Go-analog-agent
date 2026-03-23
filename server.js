@@ -1,12 +1,16 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.get("/", (req, res) => {
-  res.send("Agent is running");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.post("/generate-reply", async (req, res) => {
@@ -16,39 +20,33 @@ app.post("/generate-reply", async (req, res) => {
     }
 
     const { prompt } = req.body || {};
-
     if (!prompt) {
-      return res.status(400).json({ error: "Missing prompt in request body" });
+      return res.status(400).json({ error: "Missing prompt" });
     }
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "gpt-4.1-mini",
-        messages: [{ role: "user", content: prompt }],
-      }),
+        messages: [{ role: "user", content: prompt }]
+      })
     });
 
     const data = await response.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: "OpenAI API error",
-        details: data,
-      });
-    }
-
-    const text = data?.choices?.[0]?.message?.content || "No reply generated";
-
-    return res.json({ reply: text });
+    return res.status(response.status).json({
+      ok: response.ok,
+      status: response.status,
+      data
+    });
   } catch (error) {
     return res.status(500).json({
-      error: "Server error",
-      details: String(error),
+      error: "Server crash",
+      details: String(error)
     });
   }
 });
